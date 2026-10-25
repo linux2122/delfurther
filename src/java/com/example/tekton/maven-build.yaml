@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: maven-build
+spec:
+  workspaces:
+    - name: source
+
+  steps:
+    - name: build
+      image: maven:3.9-eclipse-temurin-17
+      workingDir: $(workspaces.source.path)/src
+      script: |
+        set -eu
+        mvn -B clean package

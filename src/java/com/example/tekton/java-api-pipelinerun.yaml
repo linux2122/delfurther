@@ -1,0 +1,20 @@
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: java-api-ci-
+spec:
+  pipelineRef:
+    name: java-api-ci
+
+  params:
+    - name: repo-url
+      value: https://github.com/linux2122/delfurther.git
+    - name: revision
+      value: main
+
+  workspaces:
+    - name: shared-workspace
+      persistentVolumeClaim:
+        claimName: java-api-workspace
+

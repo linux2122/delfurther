@@ -1,0 +1,51 @@
+
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone-with-secret
+  namespace: test
+spec:
+  params:
+    - name: git-url
+      type: string
+      description: HTTPS URL of the Git repository
+
+  workspaces:
+    - name: output
+
+  steps:
+    - name: clone
+      image: alpine/git:latest
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: git-credentials
+              key: username
+        - name: GIT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: git-credentials
+              key: token
+      script: |
+        #!/bin/sh
+        set -eu
+
+        # Git asks this helper for the username/password.
+        cat > /tmp/git-askpass.sh <<'EOF'
+        #!/bin/sh
+        case "$1" in
+          *Username*) printf '%s\n' "$GIT_USERNAME" ;;
+          *)          printf '%s\n' "$GIT_TOKEN" ;;
+        esac
+        EOF
+        chmod 700 /tmp/git-askpass.sh
+
+        export GIT_ASKPASS=/tmp/git-askpass.sh
+        export GIT_TERMINAL_PROMPT=0
+
+        git clone "$(params.git-url)" \
+          "$(workspaces.output.path)/repo"
+
+        unset GIT_TOKEN GIT_USERNAME
+
